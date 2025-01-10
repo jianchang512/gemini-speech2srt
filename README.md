@@ -21,7 +21,7 @@ Gemini AI 凭借强大的自然语言处理能力，可以快速、准确地将�
 
 win10/11 可直接下载预打包版本，解压后双击 app.exe 即可使用
   
-  下载地址：
+  下载地址： https://github.com/jianchang512/gemini-speech2srt/releases
 
 ## MacOS上源码部署
 
