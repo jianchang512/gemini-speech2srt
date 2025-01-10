@@ -1,0 +1,7 @@
+请将音频转写为文字,每个音频的转写结果使用一个<audio_text>标签返回，<audio_text>排列顺序必须同发给你的音频排序一致。
+
+返回示例：
+<result>
+    <audio_text>[第1个音频转写结果]</audio_text>
+    <audio_text>[第2个音频转写结果]</audio_text>
+</result>

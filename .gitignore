@@ -1,0 +1,9 @@
+*.spec
+*.bat
+*.exe
+build
+dist
+logs
+runtime
+tmp
+__pycache__
