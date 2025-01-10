@@ -1,6 +1,7 @@
 *.spec
 *.bat
 *.exe
+static/cfg.json
 build
 dist
 logs
