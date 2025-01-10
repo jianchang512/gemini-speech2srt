@@ -85,16 +85,25 @@ win10/11 可直接下载预打包版本，解压后双击 app.exe 即可使用
 
 ## 网络代理
 
-由于国内无法访问gemini，源码部署时，若未开启全局或设置系统代理，即便填写了代理地址和端口，可能仍无法访问，此时请打开依赖包 `site-packages\google\ai\generativelanguage_v1beta\services\generative_service\transports\grpc_asyncio.py`文件大约 226 行，在该行代码`("grpc.max_receive_message_length", -1),`下新增一行
+由于国内无法访问gemini，源码部署时，若未开启全局或设置系统代理，即便填写了代理地址和端口，可能仍无法访问，此时请打开依赖包 
+
+`site-packages\google\ai\generativelanguage_v1beta\services\generative_service\transports\grpc_asyncio.py`文件大约 226 行
+
+在该行代码`("grpc.max_receive_message_length", -1),`下新增一行
+
 `("grpc.http_proxy",os.environ.get('http_proxy') or os.environ.get('https_proxy'))`
+
 再到 211 行下新增一行 `import os`
 
 ![image](https://github.com/user-attachments/assets/ac941661-30cc-415f-9e70-59d9af9e9972)
 
+
+## 修改提示词
+
+`static/prompt.txt` 内是提示词，可根据当前默认进行修改，但注意返回数据格式不得变动，否则可能出错。
 
 ## 用到的部分开源项目
 
 - [faster-whisper](https://github.com/SYSTRAN/faster-whisper/)
 - [QDarkStyleSheet](https://github.com/ColinDuquesnoy/QDarkStyleSheet)
 
-> ("grpc.http_proxy",os.environ.get('http_proxy') or os.environ.get('https_proxy'))
