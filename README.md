@@ -1,7 +1,7 @@
 
 > 这是一个使用 Gemini AI 转录音频视频为 SRT 字幕的项目
+![gemini](https://github.com/user-attachments/assets/a2816486-d19a-4984-ba68-7d141b403f1c)
 
-![image](https://github.com/user-attachments/assets/a5948eae-9659-4d38-a765-223a3faa97fe)
 
 
 Gemini AI 凭借强大的自然语言处理能力，可以快速、准确地将音视频内容转录为文字,并且提供了可观的每日免费额度，足以满足日常的音视频转录需求。
