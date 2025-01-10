@@ -25,15 +25,17 @@ win10/11 可直接下载预打包版本，解压后双击 app.exe 即可使用
 
 ## MacOS上源码部署
 
-> Maoc上使用 brew 安装 python3 和 ffmepg，如果你的Mac上不支持 `brew` 命令，需要安装 Homebrew
->使用该命令安装 Homebrew   `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+> Maoc上使用 brew 安装 python3 和 ffmpeg，如果你的Mac上不支持 `brew` 命令，需要先安装 Homebrew
+> 
+>使用该命令安装 Homebrew，   `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+> 
 > 上述命令需要科学上网才可成功执行，如果失败，请使用下方命令
+> 
 > `/bin/zsh -c "$(curl -fsSL https://gitee.com/cunkai/HomebrewCN/raw/master/Homebrew.sh)"`
 
 1. 安装 python3.10+ , 如果已存在可跳过
 
     ```
-
     brew install python@3.10
     ln -s /opt/homebrew/opt/python@3.10/bin/python3 /opt/homebrew/bin/python3
     ln -s /opt/homebrew/opt/python@3.10/bin/pip3 /opt/homebrew/bin/pip3
@@ -45,7 +47,7 @@ win10/11 可直接下载预打包版本，解压后双击 app.exe 即可使用
 
     ```
         git clone https://github.com/jianchang512/gemini-speech2srt
-        cd gemini-speechsrt
+        cd gemini-speech2srt
         python3 -m venv venv
         . venv/bin/activate
         pip3 install -r requirements.txt       
@@ -78,7 +80,8 @@ win10/11 可直接下载预打包版本，解压后双击 app.exe 即可使用
 1. 下载 python3.10 安装包，下载地址 https://www.python.org/ftp/python/3.10.10/python-3.10.10-amd64.exe
 2. 双击打开下载的exe文件，注意选中**Add python.exe to PATH*t,否则无法直接使用 `python`命令![image](https://github.com/user-attachments/assets/a0a93d47-e005-43d2-a451-4bb607281651)
 
-3. 从github下载**源码包**，解压后进入`requirements.txt` 所在文件夹内，文件夹地址栏输入`cmd`回车，在弹出的终端中输入命令 `python -m venv venv`,回车执行创建虚拟环境，继续输入`.\venv\scripts\activate`回车激活虚拟环境,以下操作都在该虚拟环境内
+3. 从github下载**源码包** ![image](https://github.com/user-attachments/assets/c51ab4b9-4da1-46df-981f-1ab609e9bea5)
+解压后进入`requirements.txt` 所在文件夹内，在文件夹地址栏输入`cmd`回车，弹出的终端中输入命令 `python -m venv venv`,回车执行创建虚拟环境，继续输入`.\venv\scripts\activate`回车激活虚拟环境,以下操作都在该虚拟环境内
 4. 安装依赖,  `pip install -r requirements.txt`
 5. 启动，`python app.py`
 
