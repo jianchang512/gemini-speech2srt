@@ -83,10 +83,8 @@ else:
 
 
 os.environ['QT_API'] = 'pyside6'
-os.environ['SOFT_NAME'] = 'pyvideotrans'
-os.environ['MODELSCOPE_CACHE'] = ROOT_DIR + "/models"
-os.environ['HF_HOME'] = ROOT_DIR + "/models"
-os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = 'true'
+os.environ['SOFT_NAME'] = 'gemini-speech2srt'
+
 
 
 task_finished={}
