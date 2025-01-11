@@ -18,28 +18,17 @@ import numpy as np
 from pydub import AudioSegment
 import socket
 from googleapiclient.errors import HttpError
+import google
 from google.api_core.exceptions import ServerError,TooManyRequests,RetryError
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-safetySettings = [
-    {
-        "category": HarmCategory.HARM_CATEGORY_HARASSMENT,
-        "threshold": HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-        "category": HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        "threshold": HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-        "category": HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-        "threshold": HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-        "category": HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-        "threshold": HarmBlockThreshold.BLOCK_NONE,
-    }
-]
+safetySettings = {
+    HarmCategory.HARM_CATEGORY_HARASSMENT:HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_HATE_SPEECH:HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:HarmBlockThreshold.BLOCK_NONE
+}
 
 
 
@@ -178,6 +167,9 @@ class TaskThread(QThread):
         self.task_finished.emit(json.dumps({'type': 'log', 'text': f'开始转写字幕 {p.name}' }))        
     
         seg_list=self.cut_audio(audio_file)
+        if len(seg_list)<1:
+            raise Exception(f'预先VAD切割失败: {file}')
+        
         seg_list=[seg_list[i:i + 20] for i in  range(0, len(seg_list), 20)]
         generation_config = {
                   "temperature": 1,
@@ -187,6 +179,7 @@ class TaskThread(QThread):
         }
         prompt= cfg.prompt_gemini
         result_srts=[]
+        response=None
         for i,seg_group in enumerate(seg_list):
             api_key=self.api_key.pop(0)
             self.api_key.append(api_key)
@@ -217,6 +210,11 @@ class TaskThread(QThread):
                 )
                 cfg.logger.info(f'发送音频到Gemini:prompt={prompt}')
                 response = chat_session.send_message(prompt,request_options={"timeout":600})
+                cfg.logger.info(f'INFO[Gemini]{response.prompt_feedback.block_reason=},{response.candidates[0].finish_reason}')
+                if response.prompt_feedback.block_reason>0:
+                    raise Exception(self._get_error(response.prompt_feedback.block_reason, "forbid"))
+                if len(response.candidates) > 0 and response.candidates[0].finish_reason >1:
+                    raise Exception(self._get_error(response.candidates[0].finish_reason))
             except TooManyRequests as e:                               
                 err=f'429 请求太快或超出Gemini每日限制'
                 raise Exception(err)
@@ -224,17 +222,31 @@ class TaskThread(QThread):
             except (RetryError,socket.timeout,ServerError) as e:
                 error='无法连接到Gemini,请尝试使用或更换代理'
                 raise Exception(error)
+            except google.api_core.exceptions.PermissionDenied:
+                raise Exception(f'您无权访问所请求的资源或模型 ')
+            except google.api_core.exceptions.ResourceExhausted:                
+                raise Exception(f'您的配额已用尽。请稍等片刻，然后重试,若仍如此，请查看Google账号 ')
+            except google.auth.exceptions.DefaultCredentialsError:                
+                raise Exception(f'验证失败，可能 Gemini API Key 不正确 ')
+            except google.api_core.exceptions.InvalidArgument:                
+                raise Exception(f'文件过大或 Gemini API Key 不正确 ')
+            except genai.types.BlockedPromptException as e:
+                raise Exception(self._get_error(e.args[0].finish_reason))
+            except genai.types.StopCandidateException as e:
+                cfg.logger.exception(f'[Gemini]-3:{e=}', exc_info=True)
+                if int(e.args[0].finish_reason>1):
+                    raise Exception(self._get_error(e.args[0].finish_reason))
             except Exception as e:
                 error = str(e)
-                cfg.logger.exception(f'[Gemini]请求失败:{error=}', exc_info=True)
-                if error.find('User location is not supported') > -1 or error.find('time out') > -1:
+                cfg.logger.exception(f'[Gemini]请求失败{e.__class__name}:{error=}', exc_info=True)
+                if error.find('User location is not supported') > -1:
                     raise Exception("当前请求ip(或代理服务器)所在国家不在Gemini API允许范围")
                 raise
             else:
                 cfg.logger.info(f'gemini返回结果:{response.text=}')
                 m=re.findall(r'<audio_text>(.*?)<\/audio_text>',response.text.strip(),re.I)
                 if len(m)<1:
-                    raise Exception("No recognition result")
+                    continue
                 str_s=[]
                 for j,f in enumerate(seg_group):
                     if j < len(m):
@@ -254,7 +266,7 @@ class TaskThread(QThread):
 
         if len(result_srts)<1:
             
-            raise Exception(f'获取失败-3 {img=}')
+            raise Exception(f'获取失败-3')
         
 
         str_srts="\n\n".join(result_srts)
@@ -266,17 +278,24 @@ class TaskThread(QThread):
 
     def _get_error(self, num=5, type='error'):
         REASON_CN = {
-            2: "超出长度",
-            3: "安全限制",
-            4: "文字过度重复",
-            5: "其他原因"
+            2: "已达到请求中指定的最大令牌数量",
+            3: "由于安全原因，候选响应内容被标记",
+            4:"候选响应内容因背诵原因被标记",
+            5:"原因不明",
+            6:"候选回应内容因使用不支持的语言而被标记",
+            7:"由于内容包含禁用术语，令牌生成停止",
+            8:"令牌生成因可能包含违禁内容而停止",
+            9: "令牌生成停止，因为内容可能包含敏感的个人身份信息",
+            10: "模型生成的函数调用无效",
         }
-        
+
         forbid_cn = {
+            0: "安全原因被Gemini屏蔽",
             1: "被Gemini禁止翻译:出于安全考虑，提示已被屏蔽",
-            2: "被Gemini禁止翻译:由于未知原因，提示已被屏蔽"
+            2: "提示因未知原因被屏蔽了",
+            3: "提示因术语屏蔽名单中包含的字词而被屏蔽",
+            4: "系统屏蔽了此提示，因为其中包含禁止的内容。",
         }
-        
         return REASON_CN[num] if type == 'error' else forbid_cn[num]
     
     
@@ -325,9 +344,6 @@ class TaskThread(QThread):
 
         return data
 
-
-
-
     def stop(self):
         self.is_running = False
 
@@ -335,7 +351,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("PVT GeminiAI音视频转写v0.2   https://pyvideotrans.com")
+        self.setWindowTitle("PVT GeminiAI音视频转写v0.3   https://pyvideotrans.com")
         self.setMinimumSize(800, 600)
 
         # 设置窗口图标
